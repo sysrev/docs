@@ -1,8 +1,9 @@
 # Sysrev Docs
-Documentation, tutorials and articles for sysrev.com.
+Documentation, tutorials and articles for [sysrev.com](https://sysrev.com).
 
 # Documentation
-Documentation is coming! Just give us a bit longer.
+Documentation is coming! Just give us a bit longer.  
+<span style="color:red">**This page is just a beta test, the url and content may change very soon.**</span>
 
 ## Tutorials
 **[Reviewing FDA Druglabel](articles/reviewing-fda-druglabel.html)**  
