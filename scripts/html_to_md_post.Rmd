@@ -1,0 +1,111 @@
+---
+title: "Migrating ghost blog to docs.sysrev.com"
+---
+
+```{r}
+library(purrr)
+library(tidyverse)
+library(rmarkdown)
+library(magrittr)
+library(progressr)
+progressr::handlers(global = T)
+db    <- DBI::dbConnect(RSQLite::SQLite(),"archive/ghost/ghost/data/ghost.db")
+ghost <- map(DBI::dbListTables(db), ~ tbl(db,.)) |> set_names(DBI::dbListTables(db))
+```
+
+```{r images-to-s3}
+s3     <-  paws::s3()
+purrr::walk(list.files("_posts/blog/content",recursive = T,full.names = T),\(file){
+  cat(file,"\n")
+  s3$put_object(ACL="public-read",Key = file, Body=file, Bucket="sysrev-docs")
+})
+```
+
+```{r filenames}
+filenames <- c("sysrev-and-spacy.md",
+               "start-a-sysrev.md",
+               "mute-echo-chamber.md",
+               "fair-literature-review.md",
+               "what-is-document-review.md",
+               "sysrev-chemical-transparency.md",
+               "sysrev-mini-grants.md",
+               "which-genes-matter.md",
+               "machine-learning.md",
+               "sysrev-proof-of-review.md",
+               "how-to-do-pdf-review.md",
+               "what-is-sysrev.md",
+               "pharmacovigilance-living-review.md",
+               "covidence-replacement.md",
+               "covidence-replacement-2.md",
+               "excel-for-extraction.md",
+               "ris-import.md",
+               "mangiferin-managed-review.md",
+               "generating-insights.md",
+               "managed-review.md",
+               "etl-for-partially-structured-data.md",
+               "phylogeny-of-sot.md",
+               "cloning-projects.md",
+               "sysrev-analytics.md",
+               "support-covid.md",
+               "group-labels.md",
+               "account-types.md",
+               "rsr.md",
+               "what-is-sysrev-for.md",
+               "sysrev-in-the-classroom.md",
+               "open-source-labels.md",
+               "pricing-simplified.md",
+               "ctgov.md",
+               "library-minigrants.md",
+               "covidence-switch.md",
+               "cite-sysrev.md")
+```
+
+```{r}
+posts <- ghost$posts |> 
+  select(title,slug,meta_description,html) |> 
+  collect() |> 
+  mutate(description = ifelse(is.na(meta_description),slug,meta_description),.keep="unused") |> 
+  select(title,description,html) |> 
+  mutate(fname = filenames)
+
+create_md_post <- function(title,description,html,fname=NULL){
+  temp <- tempfile(fileext = ".html") %T>% write_lines(x = html)
+  
+  md  <- tempfile(fileext = ".md") %T>%
+    pandoc_convert(input = temp,to="markdown_strict",output = .) |>
+    readr::read_file() |> 
+    gsub(pattern     = 'src *= *("|\')/content',
+         replacement = 'src="https://sysrev-docs.s3.amazonaws.com/_posts/blog/content')
+  
+  header <- 
+  
+  fname <- if(is.null(fname)){
+    cat(glue::glue_col("URL for {bold {red {title}}}\n"))
+    readline(prompt="")
+  }else{ fname }
+  
+  fname <- glue::glue("_posts/blog/{fname}")
+  file.create(fname)
+  writeLines(
+    con=fname,
+    text=glue::glue("
+    ---
+    title: {title}
+    description: {description}
+    ---
+    {md}"))
+}
+
+purrr::pmap(posts,create_md_post)
+
+posts |> 
+  mutate(
+    pkg    = ".",
+    input  = glue::glue("_posts/blog/{fname}"),
+    output = glue::glue("_posts/blog/{fname}") |> fs::path_ext_set("html")) |> 
+  select(pkg,title,input,path=output) |> 
+  purrr::pmap(srdocs::render_article)
+
+```
+
+```

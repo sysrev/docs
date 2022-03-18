@@ -26,58 +26,38 @@ render_site = function(title="Ontox-Dev") {
   # xml2::write_xml(root, "./docs/index.html")
 }
 
-render_article = function(file, pkg = ".", data = list(), lazy = FALSE, quiet = TRUE){
-  # TODO we should copy pkgdown::build_article rather than distill
-  library(pkgdown)
-  pkg <- as_pkgdown(pkg)
-  vig <- match(name, pkg$vignettes$name)
-  if (is.na(vig)) {
-    stop("Can't find article called ", src_path(name), call. = FALSE)
-  }
-  input <- pkg$vignettes$file_in[vig]
-  output_file <- pkg$vignettes$file_out[vig]
-  depth <- pkg$vignettes$depth[vig]
-  input_path <- path_abs(input, pkg$src_path)
-  output_path <- path_abs(output_file, pkg$dst_path)
-  if (lazy && !out_of_date(input_path, output_path)) {
-    return(invisible())
-  }
-  pkgdown:::local_envvar_pkgdown(pkg)
-  local_options_link(pkg, depth = depth)
-  front <- rmarkdown::yaml_front_matter(input_path)
-  # front_opengraph <- check_open_graph(front$opengraph %||% list())
-  # data$opengraph <- utils::modifyList(data$opengraph %||% list(), front_opengraph)
-  # ext <- purrr::pluck(front, "pkgdown", "extension", .default = "html")
-  # as_is <- isTRUE(purrr::pluck(front, "pkgdown", "as_is"))
+render_article = function(pkg = ".", title, input, path){
+  pkg      <- pkgdown:::as_pkgdown(".")
+  filename <- fs::path_abs(input)
+  body     <- pkgdown:::markdown_body(filename, strip_header=TRUE, pkg=pkg)
+  data     <- list(pagetitle=title, body=body, filename=filename, source=NULL)
 
-  default_data <- list(pagetitle   = front$title,
-                       pengraph    = list(description = front$description),
-                       source      = repo_source(pkg, path_rel(input,pkg$src_path)),
-                       filename    = path_file(input),
-                       output_file = output_file,
-                       as_is       = as_is)
+  cli::cat_line("Rendering ", pkgdown:::src_path(fs::path_rel(filename, pkg$src_path)))
+  render_page(pkg,"title-body",data=data,path=path)
+}
 
-  data <- utils::modifyList(default_data, data)
-  if (as_is) {
-    format <- NULL
-    if (identical(ext, "html")) {
-      data$as_is <- TRUE
-      template <- rmarkdown_template(pkg, "article", depth = depth, data = data)
-      output   <- rmarkdown::default_output_format(input_path)
-      options  <- list(template = template$path, self_contained = FALSE)
-      if (output$name != "rmarkdown::html_vignette") {
-        options$theme <- output$options$theme
-      }
-    }
-    else {
-      options <- list()
-    }
-  }
-  else {
-    format <- build_rmarkdown_format(pkg = pkg, name = "article",
-                                     depth = depth, data = data, toc = TRUE)
-    options <- NULL
-  }
-  render_rmarkdown(pkg, input = input, output = output_file,
-                   output_format = format, output_options = options, quiet = quiet)
+render_page <- function (pkg = ".", name, data, path = "", depth = NULL, quiet = FALSE){
+  pkg   <- as_pkgdown(pkg)
+  depth <- if (is.null(depth)){ length(strsplit(path, "/")[[1]]) - 1L}else{depth}
+  html  <- render_page_html(pkg, name = name, data = data, depth = depth)
+
+  pkgdown:::tweak_page(html, name, pkg = pkg)
+  pkgdown:::activate_navbar(html, data$output_file %||% path, pkg)
+
+  rendered <- as.character(html, options = character())
+  pkgdown:::write_if_different(pkg, rendered, path, quiet = quiet)
+}
+
+render_page_html <- function (pkg, name, data = list(), depth = 0L){
+  data                 <- utils::modifyList(data_template(pkg, depth = depth), data)
+  pieces               <- c("head", "in-header", "before-body", "navbar", "content", "footer", "after-body")
+  templates            <- purrr::map_chr(pieces, pkgdown:::find_template, name = name,pkg = pkg)
+  components           <- purrr::map(templates, pkgdown:::render_template, data = data)
+  components           <- purrr::set_names(components, pieces)
+  components$template  <- name
+  components$lang      <- pkg$lang
+  components$translate <- data$translate
+  template             <- pkgdown:::find_template("layout", name, pkg = pkg)
+  rendered             <- pkgdown:::render_template(template, components)
+  xml2::read_html(rendered, encoding = "UTF-8")
 }

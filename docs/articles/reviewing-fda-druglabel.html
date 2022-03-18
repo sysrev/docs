@@ -29,15 +29,15 @@
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
-    
+
 
     <nav class="navbar fixed-top navbar-light navbar-expand-lg bg-light"><div class="container">
-    
+
     <a class="navbar-brand me-2" href="../index.html">srblog</a>
 
     <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1.9007</small>
 
-    
+
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -54,27 +54,28 @@
 <li class="nav-item">
   <a class="external-link nav-link" href="https://github.com/sysrev/srblog/" aria-label="github">
     <span class="fab fa fab fa-github fa-lg"></span>
-     
+
   </a>
 </li>
       </ul>
 </div>
 
-    
+
   </div>
 </nav><div class="container template-article">
 
 <div class="row">
   <main id="main"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Reviewing Drugs@FDA</h1>
-            
-      
-      <small class="dont-index">Source: <a href="https://github.com/sysrev/srblog/blob/HEAD/vignettes/reviewing-fda-druglabel.Rmd" class="external-link"><code>vignettes/reviewing-fda-druglabel.Rmd</code></a></small>
+
+<!-- TODO NEED TO AUTOGENERATE THIS LINK-->
+      <small class="dont-index">Source: <a href="https://github.com/sysrev/srblog/blob/main/_posts/reviewing-fda-druglabel/reviewing-fda-druglabel.Rmd" class="external-link">
+        <code>vignettes/reviewing-fda-druglabel.Rmd</code></a></small>
       <div class="d-none name"><code>reviewing-fda-druglabel.Rmd</code></div>
     </div>
 
-    
-    
+
+
 <p>Sysrev provides a <a href="mailto:Drugs@FDA" class="email">Drugs@FDA</a> searchable stream for document reviews which politely ingests PDFs and metadata from <a href="https://labels.fda.gov/" class="external-link">labels.fda.gov</a>.</p>
 <p>The docs/metadata are indexed with a PDF parsing / OCR function to enable full text search and categorization. Sysrev also creates a versioning system for FDA documents by evaluating FDA application numbers and types.</p>
 <p>In this vignette, you will learn to:<br><strong>Search</strong> <a href="mailto:Drugs@FDA" class="email">Drugs@FDA</a> –&gt; <strong>Review</strong> drug labels –&gt; <strong>Analyze</strong> results.</p>
@@ -101,7 +102,7 @@
   <span class="fu">mutate</span><span class="op">(</span>path     <span class="op">=</span> <span class="fu">glue</span><span class="op">(</span><span class="st">'~/tmp/srblog/pdf/{aid}.pdf'</span><span class="op">)</span><span class="op">)</span>    |&gt; <span class="co"># local file names</span>
   <span class="fu">mutate</span><span class="op">(</span>metadata <span class="op">=</span> <span class="fu">map</span><span class="op">(</span><span class="va">metadata</span>,<span class="fu">jsonlite</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/jsonlite/man/read_json.html" class="external-link">parse_json</a></span><span class="op">)</span><span class="op">)</span> |&gt; <span class="co"># parse FDA meta</span>
   <span class="fu">unnest_wider</span><span class="op">(</span><span class="va">metadata</span><span class="op">)</span>                                |&gt; <span class="co"># FDA meta to cols</span>
-  <span class="fu">select</span><span class="op">(</span><span class="va">aid</span>,                             
+  <span class="fu">select</span><span class="op">(</span><span class="va">aid</span>,
          fda.id     <span class="op">=</span> <span class="va">ApplNo</span>,             <span class="co"># FDA Application Number</span>
          sponsor    <span class="op">=</span> <span class="va">SponsorName</span>,        <span class="co"># Sponsor of reviewed product </span>
          review     <span class="op">=</span> <span class="va">ReviewDocumentType</span>, <span class="co"># review type medical, pharma, ...</span>
@@ -128,7 +129,7 @@
          sub.subtype  <span class="op">=</span> <span class="va">SubmissionType</span><span class="op">)</span></code></pre></div>
 <p>Joining the meta, products and submission tables on sysrev article_id (aid) gives us a basic analyis table <code>fda.tb</code>. Note that article ids are repeated for documents with multiple products/submissions.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">fda.tb</span> <span class="op">=</span> <span class="va">meta.tb</span> |&gt; 
+<code class="sourceCode R"><span class="va">fda.tb</span> <span class="op">=</span> <span class="va">meta.tb</span> |&gt;
   <span class="fu">left_join</span><span class="op">(</span><span class="va">prod.tb</span>,by<span class="op">=</span><span class="st">"aid"</span><span class="op">)</span> |&gt; <span class="fu">left_join</span><span class="op">(</span><span class="va">sub.tb</span>, by<span class="op">=</span><span class="st">"aid"</span><span class="op">)</span> |&gt;
   <span class="fu">select</span><span class="op">(</span><span class="va">aid</span>, <span class="va">sponsor</span>, <span class="va">review</span>, <span class="va">sub.priority</span>, <span class="va">sub.subtype</span>, <span class="va">prod.active</span><span class="op">)</span> |&gt;
   <span class="fu">distinct</span><span class="op">(</span><span class="op">)</span>
@@ -162,7 +163,7 @@
 <p>Sadly, most information in FDA docs is not metadata. More can be learned by reading, and extracting data from the docs. We could identify sentences that contain information like:<br><strong>1. phenotypes</strong>: Where is cardiotoxicity referenced? What other phenotypes are there?<br><strong>2. dose</strong>: What doses are evaluated?<br><strong>3. route</strong>: How is a compound/substance delivered?</p>
 <p>On the cardiotox@FDA labels page <a href="https://sysrev.com/u/139/p/111474/labels/edit" class="external-link">sysrev.com/p/111474/labels/edit</a> we create a simple label for including articles and identifying cardiotoxicity sentences. We’ve labeled just a few articles so far. The answers can be extracted with <code><a href="../reference/get_answers.html">srblog::get_answers</a></code>. Other vignettes provide much more detail on the labelling process.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu">srblog</span><span class="fu">::</span><span class="fu"><a href="../reference/get_answers.html">get_answers</a></span><span class="op">(</span><span class="fl">111474</span><span class="op">)</span> |&gt; 
+<code class="sourceCode R"><span class="fu">srblog</span><span class="fu">::</span><span class="fu"><a href="../reference/get_answers.html">get_answers</a></span><span class="op">(</span><span class="fl">111474</span><span class="op">)</span> |&gt;
   <span class="fu">select</span><span class="op">(</span><span class="va">aid</span>,<span class="va">user_id</span>,<span class="va">confirm_time</span>,<span class="va">short_label</span>,<span class="va">value_type</span>,<span class="va">answer</span><span class="op">)</span></code></pre></div>
 <pre><code><span class="co">## # A tibble: 4 × 6</span>
 <span class="co">##        aid user_id confirm_time        short_label        value_type answer     </span>
@@ -209,8 +210,8 @@
   <span class="fu">select</span><span class="op">(</span><span class="va">aid</span>,<span class="va">entity</span>,<span class="va">value</span><span class="op">)</span> |&gt; <span class="fu">distinct</span><span class="op">(</span><span class="op">)</span>        |&gt; <span class="co"># count entity + value articles</span>
   <span class="fu">group_by</span><span class="op">(</span><span class="va">entity</span><span class="op">)</span>                              |&gt; <span class="co"># top 10 values by entity type</span>
   <span class="fu">mutate</span><span class="op">(</span>value <span class="op">=</span> <span class="fu">forcats</span><span class="fu">::</span><span class="fu"><a href="https://forcats.tidyverse.org/reference/fct_lump.html" class="external-link">fct_lump_n</a></span><span class="op">(</span><span class="va">value</span>,<span class="fl">10</span><span class="op">)</span><span class="op">)</span> |&gt; <span class="co"># call non top 10 values 'Other'</span>
-  <span class="fu">ungroup</span><span class="op">(</span><span class="op">)</span>                                     |&gt; 
-  <span class="fu">group_by</span><span class="op">(</span><span class="va">entity</span>,<span class="va">value</span><span class="op">)</span>                        |&gt; 
+  <span class="fu">ungroup</span><span class="op">(</span><span class="op">)</span>                                     |&gt;
+  <span class="fu">group_by</span><span class="op">(</span><span class="va">entity</span>,<span class="va">value</span><span class="op">)</span>                        |&gt;
   <span class="fu">summarize</span><span class="op">(</span>docs <span class="op">=</span> <span class="fu">n_distinct</span><span class="op">(</span><span class="va">aid</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <p><img src="reviewing-fda-druglabel_files/figure-gfm/unnamed-chunk-10-1.png" title="number of cardiotoxicity drugs@fda documents by entity value identified by the EN_TOX ner model" alt="number of cardiotoxicity drugs@fda documents by entity value identified by the EN_TOX ner model" width="100%"></p>
 <p>In this vignette we demonstrated integration of the <a href="mailto:Drugs@FDA" class="email">Drugs@FDA</a> resource into sysrev reviews. Sysrev services and srblog_methods were introduced:<br><strong>1.<code><a href="../reference/create_sysrev.html">srblog::create_sysrev</a></code></strong>: Create a sysrev with your sysrev token.<br><strong>2.<code><a href="../reference/get_.html">srblog::get_article_content</a></code></strong>: Get metadata and content urls from sysrev project ids.<br><strong>3.<code><a href="../reference/get_answers.html">srblog::get_answers</a></code></strong>: Get metadata and content urls from sysrev project ids.<br><strong>4.<code><a href="../reference/service_run.html">srblog::service_run</a></code></strong>: Get a function reference to run a sysrev service.</p>
@@ -234,9 +235,9 @@
     </footer>
 </div>
 
-  
 
-  
+
+
 
   </body>
 </html>
