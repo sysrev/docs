@@ -9,16 +9,37 @@ library(rmarkdown)
 library(magrittr)
 library(progressr)
 progressr::handlers(global = T)
-db    <- DBI::dbConnect(RSQLite::SQLite(),"archive/ghost/ghost/data/ghost.db")
-ghost <- map(DBI::dbListTables(db), ~ tbl(db,.)) |> set_names(DBI::dbListTables(db))
+db     <- DBI::dbConnect(RSQLite::SQLite(),"archive/ghost/ghost/data/ghost.db")
+ghost  <- map(DBI::dbListTables(db), ~ tbl(db,.)) |> set_names(DBI::dbListTables(db))
+Bucket <- "docs.sysrev.com"
+URL    <- "https://sysrev-docs.s3.amazonaws.com"
+```
+
+```{r s3-as-website}
+s3  <- paws::s3()
+
+s3$create_bucket(Bucket = "docs.sysrev.com")
+s3$put_bucket_acl(ACL="public-read",Bucket = Bucket)
+s3$put_bucket_website(
+  Bucket               = Bucket, 
+  WebsiteConfiguration = list(IndexDocument = list(Suffix = "index.html")))
 ```
 
 ```{r images-to-s3}
-s3     <-  paws::s3()
 purrr::walk(list.files("_posts/blog/content",recursive = T,full.names = T),\(file){
   cat(file,"\n")
   s3$put_object(ACL="public-read",Key = file, Body=file, Bucket="sysrev-docs")
 })
+
+update_s3 = function(){
+  files = list.files("docs",recursive = T,full.names = T)
+  p     = progressr::progressor(length(files))
+  purrr::walk(files,\(file){
+    p()
+    s3$put_object(ACL="public-read", Key=fs::path_rel(file,"docs"), Body=file, Bucket="docs.sysrev.com", ContentType=mime::guess_type(file))
+  })
+}
+
 ```
 
 ```{r filenames}
