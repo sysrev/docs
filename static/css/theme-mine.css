@@ -136,9 +136,15 @@ color: var(--MENU-HOME-LINK-color);
 color: var(--MENU-HOME-LINK-HOVERED-color);
 }
 
+/* code blocks */
 pre {
   margin-top:0.5rem;
   margin-bottom:1rem;
+  padding:0.1rem;
+}
+
+pre code{
+  background-color: #272822
 }
 
 .tab-panel {

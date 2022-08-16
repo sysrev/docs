@@ -347,7 +347,7 @@ textarea:focus, input[type="email"]:focus, input[type="number"]:focus, input[typ
     border: 1px solid #ccc;
 }
 #body .padding {
-    padding: 3rem 6rem;
+    padding: 1rem 2rem;
 }
 @media only all and (max-width: 59.938em) {
     #body .padding {
@@ -690,9 +690,9 @@ hr {
 #body-inner .tabs-wrapper.ui-theme-badges .tabs-nav li.current a {
     background: #4d5257;
 }
-#body-inner pre {
+/* #body-inner pre {
     white-space: pre-wrap;
-}
+} */
 .tabs-wrapper pre {
     margin: 1rem 0;
     border: 0;
