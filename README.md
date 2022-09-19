@@ -4,6 +4,8 @@ Use this repository to make SRVC or sysrev.com related feature requests and bug 
 * [Request a feature](https://github.com/sysrev/srvc-docs/issues/new)  
 * [Report a bug](https://github.com/sysrev/srvc-docs/issues/new)
 
+Check existing issues at [github.com/sysrev/srvc-docs/issues](https://github.com/sysrev/srvc-docs/issues)
+
 # Developers
 
 Deploy with
