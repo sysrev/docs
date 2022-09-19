@@ -1,5 +1,8 @@
 # SRVC Documentation and Issues
+Use this repository to make SRVC or sysrev.com related feature requests and bug reports.
 
+* [Request a feature](https://github.com/sysrev/srvc-docs/issues/new)  
+* [Report a bug](https://github.com/sysrev/srvc-docs/issues/new)
 
 # Developers
 
